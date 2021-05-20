@@ -113,13 +113,20 @@ class OIDCAuthBackend(ModelBackend):
         return oidc_user.user
 
 
-def get_or_create_user(username, email):
+def get_or_create_user(username, claims):
     username = smart_text(username)
+    universal_id = claims.get('universal-id')
+    idir_userid = claims.get('idir_userid')
 
-    users = get_user_model().objects.filter(email=email)
+    if idir_userid:
+        users = get_user_model().objects.filter(idir_userid=idir_userid)
+    elif universal_id:
+        users = get_user_model().objects.filter(universal_id=universal_id)
+    else:
+       raise SuspiciousOperation('No universal-id or idir_userid provided.')
 
     if len(users) == 0:
-        user = get_user_model().objects.create_user(username, email=email)
+        user = get_user_model().objects.create_user(username, universal_id=universal_id, idir_userid=idir_userid)
     elif len(users) == 1:
         return users[0]
     else:  # duplicate handling
@@ -138,9 +145,8 @@ def get_or_create_user(username, email):
 def create_oidc_user_from_claims(claims):
     """ Creates an ``OIDCUser`` instance using the claims extracted from an id_token. """
     sub = claims['sub']
-    email = claims.get('email')
     username = base64.urlsafe_b64encode(hashlib.sha1(force_bytes(sub)).digest()).rstrip(b'=')
-    user = get_or_create_user(username, email)
+    user = get_or_create_user(username, claims)
     if hasattr(user, 'oidc_user'):
         update_oidc_user_from_claims(user.oidc_user, claims)
         oidc_user = user.oidc_user
@@ -156,4 +162,6 @@ def update_oidc_user_from_claims(oidc_user, claims):
     oidc_user.userinfo = claims
     oidc_user.save()
     oidc_user.user.email = claims.get('email')
+    oidc_user.user.universal_id = claims.get('universal-id')
+    oidc_user.user.idir_userid = claims.get('idir_userid')
     oidc_user.user.save()
