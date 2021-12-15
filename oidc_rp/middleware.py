@@ -25,8 +25,9 @@ class OIDCRefreshIDTokenMiddleware:
         self.get_response = get_response
 
     def __call__(self, request):
+        is_ajax = request.META.get('HTTP_X_REQUESTED_WITH') == 'XMLHttpRequest'
         # Refreshes tokens only in the applicable cases.
-        if request.method == 'GET' and not request.is_ajax() and request.user.is_authenticated:
+        if request.method == 'GET' and not is_ajax and request.user.is_authenticated:
             self.refresh_token(request)
         response = self.get_response(request)
         return response

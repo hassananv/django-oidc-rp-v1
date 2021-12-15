@@ -8,7 +8,7 @@
 """
 
 import requests
-from django.utils.encoding import smart_text
+from django.utils.encoding import smart_str
 from requests.exceptions import HTTPError
 from rest_framework.authentication import BaseAuthentication, get_authorization_header
 from rest_framework.exceptions import AuthenticationFailed
@@ -34,7 +34,7 @@ class BearerTokenAuthentication(BaseAuthentication):
         """ Authenticates users using a provided Bearer token. """
         # First step, retrieves the Bearer token from the authorization header.
         auth = get_authorization_header(request).split()
-        if not auth or smart_text(auth[0].lower()) != 'bearer':
+        if not auth or smart_str(auth[0].lower()) != 'bearer':
             return
 
         if len(auth) == 1:
@@ -42,7 +42,7 @@ class BearerTokenAuthentication(BaseAuthentication):
         elif len(auth) > 2:
             raise AuthenticationFailed('Invalid authorization header; many bearer tokens provided')
 
-        bearer_token = smart_text(auth[1])
+        bearer_token = smart_str(auth[1])
 
         # Tries to retrieve user information from the OP.
         try:

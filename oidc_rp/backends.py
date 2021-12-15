@@ -16,7 +16,7 @@ from django.contrib.auth.backends import ModelBackend
 from django.core.exceptions import SuspiciousOperation
 from django.db import transaction
 from django.urls import reverse
-from django.utils.encoding import force_bytes, smart_text
+from django.utils.encoding import force_bytes, smart_str
 from django.utils.module_loading import import_string
 
 from .conf import settings as oidc_rp_settings
@@ -114,7 +114,7 @@ class OIDCAuthBackend(ModelBackend):
 
 
 def get_or_create_user(username, claims):
-    username = smart_text(username)
+    username = smart_str(username)
     universal_id = claims.get('universal-id')
     idir_userid = claims.get('idir_userid')
 
