@@ -115,18 +115,15 @@ class OIDCAuthBackend(ModelBackend):
 
 def get_or_create_user(username, claims):
     username = smart_str(username)
-    universal_id = claims.get('universal-id')
-    idir_userid = claims.get('idir_userid')
-
-    if idir_userid:
-        users = get_user_model().objects.filter(idir_userid=idir_userid)
-    elif universal_id:
-        users = get_user_model().objects.filter(universal_id=universal_id)
+    authorization_id = claims.get('sub')
+    
+    if authorization_id:
+        users = get_user_model().objects.filter(authorization_id=authorization_id)
     else:
-       raise SuspiciousOperation('No universal-id or idir_userid provided.')
+       raise SuspiciousOperation('No sub provided.')
 
     if len(users) == 0:
-        user = get_user_model().objects.create_user(username, universal_id=universal_id, idir_userid=idir_userid)
+        user = get_user_model().objects.create_user(username, authorization_id=authorization_id)
     elif len(users) == 1:
         return users[0]
     else:  # duplicate handling
@@ -162,6 +159,5 @@ def update_oidc_user_from_claims(oidc_user, claims):
     oidc_user.userinfo = claims
     oidc_user.save()
     oidc_user.user.email = claims.get('email')
-    oidc_user.user.universal_id = claims.get('universal-id')
-    oidc_user.user.idir_userid = claims.get('idir_userid')
+    oidc_user.user.authorization_id = claims.get('sub')
     oidc_user.user.save()
